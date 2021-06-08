@@ -13,16 +13,13 @@ npm install --save react-pull-from-edge
 ## Usage
 
 ```tsx
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 
-import MyComponent from 'react-pull-from-edge'
-import 'react-pull-from-edge/dist/index.css'
+import { PullFromEdge } from 'react-pull-from-edge';
 
-class Example extends Component {
-  render() {
-    return <MyComponent />
-  }
-}
+export const Example = () => {
+    return <PullFromEdge onPullTop={() => alert('pull from top')}>content...</PullFromEdge>;
+};
 ```
 
 ## License
