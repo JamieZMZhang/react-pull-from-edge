@@ -1,4 +1,5 @@
 import * as React from 'react';
+import styles from './PullFromEdge.module.css';
 
 export declare interface PullFromEdgeProps extends React.HTMLProps<HTMLDivElement> {
 	onPullTop?: () => Promise<any>;
@@ -20,29 +21,7 @@ export declare interface PullFromEdgeProps extends React.HTMLProps<HTMLDivElemen
 
 type Position = { x: number; y: number };
 type Direction = 'left' | 'right' | 'top' | 'bottom';
-
-const flexCenterStyle: React.CSSProperties = {
-	display: 'flex',
-	justifyContent: 'center',
-	alignItems: 'center',
-};
-
-const pullContainerStyle: React.CSSProperties = {
-	...flexCenterStyle,
-	position: 'fixed',
-	transition: 'transform .3s, opacity .4s',
-};
-
-const pullContentStyle: React.CSSProperties = {
-	...flexCenterStyle,
-	height: '3rem',
-	width: '3rem',
-	margin: '1rem',
-	borderRadius: '100%',
-	userSelect: 'none',
-	background: '#fff',
-	boxShadow: '0px 3px 5px -1px rgb(0 0 0 / 20%), 0px 6px 10px 0px rgb(0 0 0 / 14%), 0px 1px 18px 0px rgb(0 0 0 / 12%)',
-};
+type PullState = 'pulled';
 
 export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 	children,
@@ -52,10 +31,10 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 	onPullLeft,
 	onPullRight,
 	onPullTop,
-	pullTopContent = <span children="↑" style={pullContentStyle} />,
-	pullBottomContent = <span children="↓" style={pullContentStyle} />,
-	pullLeftContent = <span children="←" style={pullContentStyle} />,
-	pullRightContent = <span children="→" style={pullContentStyle} />,
+	pullTopContent = <span children="↑" className={styles.pullContent} />,
+	pullBottomContent = <span children="↓" className={styles.pullContent} />,
+	pullLeftContent = <span children="←" className={styles.pullContent} />,
+	pullRightContent = <span children="→" className={styles.pullContent} />,
 	ignoreMouseEvent = false,
 	ignoreTouchEvent = false,
 	containerRef: _containerRef,
@@ -66,6 +45,7 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 		startPoint: null as Position | null,
 		direction: null as Direction | false | null,
 		touchIdentifier: null as number | null,
+		state: null as PullState | null,
 	});
 	const pullTopRef = React.useRef<HTMLDivElement>(null);
 	const pullBottomRef = React.useRef<HTMLDivElement>(null);
@@ -91,7 +71,7 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 	};
 
 	const onMove = (evt: React.TouchEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
-		if (dragRef.current.startPoint) {
+		if (dragRef.current.startPoint && !dragRef.current.state) {
 			const { x, y } = dragRef.current.startPoint;
 			const point = 'touches' in evt ? findTouch(evt, dragRef.current.touchIdentifier!) : evt;
 			const delta = {
@@ -115,21 +95,25 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 					}
 				}
 			}
-			if (dragRef.current.direction) {
+			if (dragRef.current.direction && dragRef.current.state !== 'pulled') {
 				if (dragRef.current.direction === 'top') {
 					const offset = delta.y / pullTriggerDistance;
+					pullTopRef.current!.classList.add(styles.isPulling);
 					pullTopRef.current!.style.opacity = offset.toString();
 					pullTopRef.current!.style.transform = `translateY(${between(-100, offset * 100 - 100, 0)}%)`;
 				} else if (dragRef.current.direction === 'bottom') {
 					const offset = -delta.y / pullTriggerDistance;
+					pullBottomRef.current!.classList.add(styles.isPulling);
 					pullBottomRef.current!.style.opacity = offset.toString();
 					pullBottomRef.current!.style.transform = `translateY(${between(0, -offset * 100 + 100, 100)}%)`;
 				} else if (dragRef.current.direction === 'left') {
 					const offset = delta.x / pullTriggerDistance;
+					pullLeftRef.current!.classList.add(styles.isPulling);
 					pullLeftRef.current!.style.opacity = offset.toString();
 					pullLeftRef.current!.style.transform = `translateX(${between(-100, offset * 100 - 100, 0)}%)`;
 				} else if (dragRef.current.direction === 'right') {
 					const offset = -delta.x / pullTriggerDistance;
+					pullRightRef.current!.classList.add(styles.isPulling);
 					pullRightRef.current!.style.opacity = offset.toString();
 					pullRightRef.current!.style.transform = `translateX(${between(0, -offset * 100 + 100, 100)}%)`;
 				}
@@ -146,25 +130,30 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 				y: point.pageY - y,
 			};
 			if (dragRef.current.direction) {
+				dragRef.current.state = 'pulled';
 				if (dragRef.current.direction === 'top') {
+					pullRightRef.current!.classList.remove(styles.isPulling);
 					if (delta.y >= pullTriggerDistance) {
 						await onPullTop!();
 					}
 					pullTopRef.current!.style.opacity = '0';
 					pullTopRef.current!.style.transform = 'translateY(-100%)';
 				} else if (dragRef.current.direction === 'bottom') {
+					pullBottomRef.current!.classList.remove(styles.isPulling);
 					if (-delta.y >= pullTriggerDistance) {
 						await onPullBottom!();
 					}
 					pullBottomRef.current!.style.opacity = '0';
 					pullBottomRef.current!.style.transform = 'translateY(100%)';
 				} else if (dragRef.current.direction === 'left') {
+					pullLeftRef.current!.classList.remove(styles.isPulling);
 					if (delta.x >= pullTriggerDistance) {
 						await onPullLeft!();
 					}
 					pullLeftRef.current!.style.opacity = '0';
 					pullLeftRef.current!.style.transform = 'translateX(-100%)';
 				} else if (dragRef.current.direction === 'right') {
+					pullRightRef.current!.classList.remove(styles.isPulling);
 					if (-delta.x >= pullTriggerDistance) {
 						await onPullRight!();
 					}
@@ -174,6 +163,7 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 			}
 			dragRef.current.direction = null;
 			dragRef.current.startPoint = null;
+			dragRef.current.state = null;
 		}
 	};
 
@@ -187,13 +177,13 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 			onMouseDown={ignoreMouseEvent ? undefined : onStart}
 			onMouseMove={ignoreMouseEvent ? undefined : onMove}
 			onMouseUp={ignoreMouseEvent ? undefined : onEnd}
-			style={{ width: '100%', height: '100%', overflow: 'auto', position: 'relative', overscrollBehavior: 'none' }}
+			className={`${styles.root} ${divProps.className}`}
 		>
 			{onPullTop && (
 				<div
 					ref={pullTopRef}
+					className={styles.pullContainer}
 					style={{
-						...pullContainerStyle,
 						top: 0,
 						left: 0,
 						right: 0,
@@ -205,8 +195,8 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 			{onPullBottom && (
 				<div
 					ref={pullBottomRef}
+					className={styles.pullContainer}
 					style={{
-						...pullContainerStyle,
 						bottom: 0,
 						left: 0,
 						right: 0,
@@ -218,8 +208,8 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 			{onPullLeft && (
 				<div
 					ref={pullLeftRef}
+					className={styles.pullContainer}
 					style={{
-						...pullContainerStyle,
 						left: 0,
 						top: 0,
 						bottom: 0,
@@ -231,8 +221,8 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
 			{onPullRight && (
 				<div
 					ref={pullRightRef}
+					className={styles.pullContainer}
 					style={{
-						...pullContainerStyle,
 						right: 0,
 						top: 0,
 						bottom: 0,
