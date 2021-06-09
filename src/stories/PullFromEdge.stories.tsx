@@ -6,7 +6,20 @@ import { PullFromEdge, PullFromEdgeProps } from '../components/PullFromEdge';
 export default {
     title: 'Example/PullTop',
     component: PullFromEdge,
-    argTypes: {},
+    argTypes: {
+        onPullLeft: {
+            defaultValue: undefined,
+        },
+        onPullTop: {
+            defaultValue: undefined,
+        },
+        onPullBottom: {
+            defaultValue: undefined,
+        },
+        onPullRight: {
+            defaultValue: undefined,
+        },
+    },
 } as Meta;
 
 const Template: Story<PullFromEdgeProps> = (args) => (
@@ -23,10 +36,12 @@ function delay(ms: number) {
 
 export const Primary = Template.bind({});
 Primary.args = {
-    onPullTop: () => delay(1000),
-    onPullLeft: () => delay(1000),
-    onPullBottom: () => delay(1000),
-    onPullRight: () => delay(1000),
+    // onPullTop: () => delay(5000),
+    onPullTop: undefined,
+    onPullLeft: () => delay(5000),
+    // onPullBottom: () => delay(5000),
+    onPullBottom: undefined,
+    onPullRight: () => delay(5000),
     // ignoreMouseEvent: true,
     children: (
         <div>

@@ -45,7 +45,7 @@ const pullContentStyle: React.CSSProperties = {
 
 export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
     children,
-    pullDetectDistance: pullDetect = 30,
+    pullDetectDistance = 30,
     pullTriggerDistance = 60,
     onPullBottom,
     onPullLeft,
@@ -61,7 +61,7 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
     const containerRef = React.useRef<HTMLDivElement>(null);
     const dragRef = React.useRef({
         startPoint: null as Position | null,
-        direction: null as Direction | null,
+        direction: null as Direction | `*${Direction}` | null,
         touchIdentifier: null as number | null,
     });
     const pullTopRef = React.useRef<HTMLDivElement>(null);
@@ -99,24 +99,16 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
             if (!dragRef.current.direction) {
                 const container = containerRef.current!;
                 if (Math.abs(delta.y) >= Math.abs(delta.x)) {
-                    if (container.scrollTop === 0 && onPullTop && delta.y >= pullDetect) {
-                        dragRef.current.direction = 'top';
-                    } else if (
-                        container.scrollTop === container.scrollHeight - container.clientHeight &&
-                        onPullBottom &&
-                        -delta.y >= pullDetect
-                    ) {
-                        dragRef.current.direction = 'bottom';
+                    if (container.scrollTop === 0 && delta.y >= pullDetectDistance) {
+                        dragRef.current.direction = onPullTop ? 'top' : '*top';
+                    } else if (container.scrollTop === container.scrollHeight - container.clientHeight && -delta.y >= pullDetectDistance) {
+                        dragRef.current.direction = onPullBottom ? 'bottom' : '*bottom';
                     }
                 } else {
-                    if (container.scrollLeft === 0 && onPullLeft && delta.x >= pullDetect) {
-                        dragRef.current.direction = 'left';
-                    } else if (
-                        container.scrollLeft === container.scrollWidth - container.clientWidth &&
-                        onPullRight &&
-                        -delta.x >= pullDetect
-                    ) {
-                        dragRef.current.direction = 'right';
+                    if (container.scrollLeft === 0 && delta.x >= pullDetectDistance) {
+                        dragRef.current.direction = onPullLeft ? 'left' : '*left';
+                    } else if (container.scrollLeft === container.scrollWidth - container.clientWidth && -delta.x >= pullDetectDistance) {
+                        dragRef.current.direction = onPullRight ? 'right' : '*right';
                     }
                 }
             }
@@ -150,20 +142,28 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
                 y: point.pageY - y,
             };
             if (dragRef.current.direction) {
-                if (dragRef.current.direction === 'top' && delta.y >= pullTriggerDistance) {
-                    await onPullTop!();
+                if (dragRef.current.direction === 'top') {
+                    if (delta.y >= pullTriggerDistance) {
+                        await onPullTop!();
+                    }
                     pullTopRef.current!.style.opacity = '0';
                     pullTopRef.current!.style.transform = 'translateY(-100%)';
-                } else if (dragRef.current.direction === 'bottom' && -delta.y >= pullTriggerDistance) {
-                    await onPullBottom!();
+                } else if (dragRef.current.direction === 'bottom') {
+                    if (-delta.y >= pullTriggerDistance) {
+                        await onPullBottom!();
+                    }
                     pullBottomRef.current!.style.opacity = '0';
                     pullBottomRef.current!.style.transform = 'translateY(100%)';
-                } else if (dragRef.current.direction === 'left' && delta.x >= pullTriggerDistance) {
-                    await onPullLeft!();
+                } else if (dragRef.current.direction === 'left') {
+                    if (delta.x >= pullTriggerDistance) {
+                        await onPullLeft!();
+                    }
                     pullLeftRef.current!.style.opacity = '0';
                     pullLeftRef.current!.style.transform = 'translateX(-100%)';
-                } else if (dragRef.current.direction === 'right' && -delta.x >= pullTriggerDistance) {
-                    await onPullRight!();
+                } else if (dragRef.current.direction === 'right') {
+                    if (-delta.x >= pullTriggerDistance) {
+                        await onPullRight!();
+                    }
                     pullRightRef.current!.style.opacity = '0';
                     pullRightRef.current!.style.transform = 'translateX(100%)';
                 }
@@ -182,7 +182,7 @@ export const PullFromEdge: React.FunctionComponent<PullFromEdgeProps> = ({
             onMouseDown={ignoreMouseEvent ? undefined : onStart}
             onMouseMove={ignoreMouseEvent ? undefined : onMove}
             onMouseUp={ignoreMouseEvent ? undefined : onEnd}
-            style={{ width: '100%', height: '100%', overflow: 'auto', position: 'relative' }}
+            style={{ width: '100%', height: '100%', overflow: 'auto', position: 'relative', overscrollBehavior: 'none' }}
         >
             {onPullTop && (
                 <div
